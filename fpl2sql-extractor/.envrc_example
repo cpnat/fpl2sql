@@ -1,0 +1,4 @@
+export CLIENT_ID=""
+export CLIENT_SECRET=""
+export ENDPOINT_URL=""
+export BUCKET_NAME=""

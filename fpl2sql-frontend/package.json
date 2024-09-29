@@ -1,0 +1,40 @@
+{
+  "name": "fpl2sql-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format:html": "prettier --write '**/*.html'",
+    "format:ts": "prettier --write '**/*.{ts,tsx}'",
+    "format": "npm run format:html && npm run format:ts",
+    "check-format:html": "prettier --check '**/*.html'",
+    "check-format:ts": "prettier --check '**/*.{ts,tsx}'",
+    "check-format": "npm run check-format:html && npm run check-format:ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.11.1",
+    "eslint": "^9.11.1",
+    "eslint-plugin-typescript": "^0.14.0",
+    "globals": "^15.9.0",
+    "lint-staged": "^15.2.10",
+    "npm-check-updates": "^17.0.6",
+    "package-lock-only": "^0.0.4",
+    "pre-commit": "^1.2.2",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.7.0",
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "@codemirror/lang-sql": "^6.7.0",
+    "@duckdb/duckdb-wasm": "^1.28.0",
+    "@pgrabovets/json-view": "^2.7.5",
+    "bootstrap": "^5.3.3",
+    "codemirror": "^6.0.1",
+    "handsontable": "^14.5.0"
+  }
+}

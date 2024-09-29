@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "/fpl2sql_extractor/api/app.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "fpl2sql_extractor/api/app.py" }
+  ],
+  "crons": [
+    {
+      "path": "/",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}

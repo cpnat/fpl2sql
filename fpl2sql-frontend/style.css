@@ -1,0 +1,159 @@
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+  font: Avenir, Helvetica, Arial, sans-serif
+  font-size: 14px;
+}
+
+.container {
+  margin: auto;
+  min-width: 300px;
+  max-width: 2000px;
+  width: 95%;
+  text-align: center;
+}
+
+.handsontable {
+  font-family: Avenir, Helvetica, Arial, sans-serif !important;
+  font-size: 14px !important;
+}
+
+.btn-link {
+  color: #198754 !important;
+  text-decoration: none;
+}
+
+.overflow-scroll {
+  overflow-y: auto; /* Enable vertical scrollbar */
+  max-width: 400px; /* Set maximum width */
+  max-height: 800px; /* Set maximum height */
+}
+
+.json-container {
+  font-family: Avenir, Helvetica, Arial, sans-serif !important;
+}
+
+.json-container .empty-icon {
+  flex-shrink: 0;
+  width: 5px !important;
+}
+
+.json-value {
+  color: #198754 !important;
+}
+
+#accordion {
+  width: 100%;
+  margin: auto;
+  text-align: left;
+}
+
+.card-header{height: 40px; padding: 0px;}
+
+#submit {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+#result {
+  margin: auto;
+  width: 100%;
+  text-align: left;
+  font-size: 16px !important;
+  font-family: Avenir, Helvetica, Arial, sans-serif !important;
+}
+
+.myBt {
+  background-color: white;
+  color: #198754;
+  padding: 5px 10px;
+  margin: 5px 5px;
+  border: none;
+  cursor: pointer;
+  opacity: 0.9;
+  align-items: left;
+  height: 35px;
+}
+
+#pages {
+  text-align: left;
+}
+
+#query {
+  margin: auto;
+  width: 100%;
+  margin-top: 20px;
+}
+
+#queryBox {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+#queryEditor {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+  height: auto;
+  width: 100%;
+  text-align: left;
+}
+
+#codeTitle {
+  font-size: 16px;
+  font-weight: bold;
+  padding-left: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+code {
+  display: block;
+  white-space: pre-wrap;
+  margin: 0;
+  overflow-x: auto;
+  background-color: #f4f4f4;
+  border-radius: 5px;
+  font-family: monospace;
+  padding-left: 20px; /* Add left padding to indent the code block */
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+@media (max-width: 1250px) {
+  #col-3 {
+    width: 100%;
+  }
+
+  #col-9 {
+    width: 100%;
+  }
+
+  .overflow-scroll {
+    overflow-y: auto;
+    max-width: none;
+    max-height: 400px;
+  }
+
+}
+
+#loadingBar {
+  padding: 5px;
+}
+
+h1 {
+  padding-bottom: 20px;
+}
+
+a {
+  color: #198754;
+}
+
+#collapseTwo {
+  padding: 10px;
+}

@@ -1,0 +1,7 @@
+{
+  "name": "fpl2sql-frontend",
+  "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  }
+}
