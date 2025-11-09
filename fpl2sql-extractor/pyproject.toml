@@ -28,6 +28,14 @@ datamodel-code-generator = "^0.25.4"
 pre-commit = "^3.6.2"
 uvicorn = "^0.30.6"
 types-setuptools = "^75.1.0.20240917"
+pytest = "^8.4.1"
+pytest-asyncio = "^1.1.0"
+pytest-cov = "^6.2.1"
+aioresponses = "^0.7.8"
+pytest-mock = "^3.14.1"
+factory-boy = "^3.3.3"
+freezegun = "^1.5.5"
+pytest-xdist = "^3.8.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -92,10 +92,22 @@ function setupEditor(): EditorView {
             height: 'auto',
             overflow: 'hidden',
             fontSize: '14px',
-            fontFamily: 'Avenir, Helvetica, Arial, sans-serif',
+            fontFamily: "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace",
+            backgroundColor: '#ffffff',
           },
           '.cm-scroller': {
             maxHeight: '500px',
+            fontFamily: "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace",
+          },
+          '.cm-content': {
+            padding: '12px',
+            minHeight: '120px',
+          },
+          '.cm-focused': {
+            outline: 'none',
+          },
+          '.cm-editor': {
+            borderRadius: '8px',
           },
         }),
       ],
@@ -146,26 +158,99 @@ async function introspectDatabase(conn: duckdb.AsyncConnection) {
   }
 }
 
+function showLoadingSkeleton() {
+  const loadingBar = document.getElementById('loadingBar');
+  if (loadingBar) {
+    loadingBar.innerHTML = `
+      <div class="loading-container fade-in">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading database...</div>
+      </div>
+    `;
+  }
+}
+
+function showErrorMessage(error: unknown) {
+  const container = document.getElementById('result') as HTMLElement;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
+  container.innerHTML = `
+    <div class="error-message slide-in">
+      <span class="error-icon">✕</span>
+      <div class="error-content">
+        <div class="error-title">Query Execution Failed</div>
+        <div>${escapeHtml(errorMessage)}</div>
+        <div class="error-details">${escapeHtml(errorMessage)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+
 async function init() {
   console.log('Initializing DuckDB');
   const conn = await setupDatabase();
   const baseURL = new URL('./db_export', STORAGE_URL).href;
 
   console.log('Loading database files');
-  const loading = `
-  <div class="d-flex justify-content-center">
-    <div class="spinner-border" role="status">
-      <span class="sr-only"></span>
-    </div>
-  </div>`;
-  document.getElementById('loadingBar')!.innerHTML = loading;
-  await loadDatabaseFiles(conn, baseURL);
+  showLoadingSkeleton();
 
-  await introspectDatabase(conn);
+  try {
+    await loadDatabaseFiles(conn, baseURL);
+    await introspectDatabase(conn);
+    document.getElementById('loadingBar')!.innerHTML = '';
+
+    const schemaDiv = document.getElementById('databaseSchema');
+    if (schemaDiv) {
+      schemaDiv.classList.add('fade-in');
+    }
+  } catch (error) {
+    console.error('Error loading database:', error);
+    document.getElementById('loadingBar')!.innerHTML = `
+      <div class="error-message slide-in">
+        <span class="error-icon">✕</span>
+        <div class="error-content">
+          <div class="error-title">Failed to load database</div>
+          <div>${error instanceof Error ? error.message : String(error)}</div>
+        </div>
+      </div>
+    `;
+  }
+
   const queryEditor = setupEditor();
 
+  // Add event listeners for accordion to highlight active cards
+  const accordionCards = document.querySelectorAll('#accordion .clickable-card');
+  accordionCards.forEach((card) => {
+    const collapse = card.querySelector('.collapse');
+    if (collapse) {
+      // Bootstrap 4 events
+      collapse.addEventListener('shown.bs.collapse', () => {
+        card.classList.add('show');
+      });
+      collapse.addEventListener('hidden.bs.collapse', () => {
+        card.classList.remove('show');
+      });
+      // Don't mark as shown on initial load - only when user interacts
+    }
+
+    // Prevent card click when clicking on links inside
+    card.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A' || target.closest('a')) {
+        e.stopPropagation();
+        return;
+      }
+    });
+  });
+
   document.getElementById('submit')?.addEventListener('click', () => submitQuery(conn, queryEditor));
-  document.getElementById('loadingBar')!.innerHTML = '';
 
   document.getElementById('teamFixturesQuery')?.addEventListener('click', () => fixturesQuery(queryEditor));
   document.getElementById('teamResultsQuery')?.addEventListener('click', () => resultsQuery(queryEditor));
@@ -186,11 +271,27 @@ function getQuery(queryEditor: EditorView): string {
 }
 
 async function submitQuery(conn: duckdb.AsyncConnection, queryEditor: EditorView) {
-  document.getElementById('pages')!.innerHTML = 'Executing query...';
   const query = getQuery(queryEditor);
 
+  if (!query.trim()) {
+    showErrorMessage(new Error('Please enter a SQL query'));
+    return;
+  }
+
+  const submitButton = document.getElementById('submit') as HTMLButtonElement;
   const container = document.getElementById('result') as HTMLElement;
-  container.innerHTML = '';
+  const pagesDiv = document.getElementById('pages') as HTMLElement;
+
+  // Show loading state
+  submitButton.disabled = true;
+  submitButton.classList.add('loading');
+  pagesDiv.innerHTML = '';
+  container.innerHTML = `
+    <div class="loading-container fade-in">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Executing query...</div>
+    </div>
+  `;
 
   try {
     const res = await conn.query(query);
@@ -199,25 +300,48 @@ async function submitQuery(conn: duckdb.AsyncConnection, queryEditor: EditorView
       JSON.stringify(res.toArray(), (key, value) => (typeof value === 'bigint' ? Number(value) : value))
     );
 
-    const hot = new Handsontable(container, {
-      data: DATA.slice(0, ROWS_ON_SINGLE_PAGE),
-      readOnly: true,
-      rowHeaders: range(1, ROWS_ON_SINGLE_PAGE),
-      colHeaders: Object.keys(DATA[0]),
-      height: 'auto',
-      autoWrapRow: true,
-      autoWrapCol: true,
-      dropdownMenu: false,
-      multiColumnSorting: true,
-      filters: false,
-      licenseKey: 'non-commercial-and-evaluation',
-    });
+    if (DATA.length === 0) {
+      container.innerHTML = `
+        <div class="info-message fade-in">
+          <span>ℹ</span>
+          <span>Query executed successfully but returned no results.</span>
+        </div>
+      `;
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      container.innerHTML = '';
+      container.classList.add('fade-in');
 
-    createPages(hot);
+      const columnKeys = Object.keys(DATA[0]);
+      const hot = new Handsontable(container, {
+        data: DATA.slice(0, ROWS_ON_SINGLE_PAGE),
+        readOnly: true,
+        rowHeaders: range(1, Math.min(ROWS_ON_SINGLE_PAGE, DATA.length)),
+        colHeaders: columnKeys,
+        columns: columnKeys.map((key) => ({
+          data: key,
+          type: 'text',
+        })),
+        height: 'auto',
+        autoWrapRow: false,
+        autoWrapCol: false,
+        wordWrap: false,
+        dropdownMenu: false,
+        multiColumnSorting: true,
+        filters: false,
+        licenseKey: 'non-commercial-and-evaluation',
+      });
+
+      createPages(hot);
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   } catch (error) {
-    document.getElementById('pages')!.innerHTML = '';
-    container.innerHTML = 'Error executing query: ' + error;
+    showErrorMessage(error);
     console.error('Error executing query:', error);
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } finally {
+    submitButton.disabled = false;
+    submitButton.classList.remove('loading');
   }
 }
 
@@ -229,6 +353,13 @@ function insertQuery(queryEditor: EditorView, query: string) {
       insert: query,
     },
   });
+  queryEditor.focus();
+
+  // Scroll the query editor into view
+  const queryEditorElement = document.getElementById('queryEditor');
+  if (queryEditorElement) {
+    queryEditorElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function playerResultsQuery(queryEditor: EditorView) {
@@ -253,14 +384,22 @@ function playerStatsShabangQuery(queryEditor: EditorView) {
 
 function setPageStyles(pageNumber: number) {
   const buttons = document.getElementsByClassName('myBt');
+  const root = document.documentElement;
+  const bgColor = getComputedStyle(root).getPropertyValue('--bg-color').trim();
+  const primaryColor = getComputedStyle(root).getPropertyValue('--primary-color').trim();
+
   for (let i = 0; i < buttons.length; i++) {
     const button = buttons[i] as HTMLElement;
-    button.style.backgroundColor = 'white';
-    button.style.color = 'green';
+    button.style.backgroundColor = bgColor;
+    button.style.color = primaryColor;
+    button.style.borderColor = primaryColor;
   }
   const selectedButton = buttons[pageNumber - 1] as HTMLElement;
-  selectedButton.style.backgroundColor = 'green';
-  selectedButton.style.color = 'white';
+  if (selectedButton) {
+    selectedButton.style.backgroundColor = primaryColor;
+    selectedButton.style.color = bgColor;
+    selectedButton.style.borderColor = primaryColor;
+  }
 }
 
 function createPages(hot: Handsontable) {
@@ -269,9 +408,21 @@ function createPages(hot: Handsontable) {
 
   const els = Math.ceil(DATA.length / ROWS_ON_SINGLE_PAGE);
 
+  if (els <= 1) {
+    pages.innerHTML = `<span class="result-count">${DATA.length} result${DATA.length !== 1 ? 's' : ''}</span>`;
+    return;
+  }
+
+  // Add result count
+  const countSpan = document.createElement('span');
+  countSpan.className = 'result-count';
+  countSpan.textContent = `${DATA.length} result${DATA.length !== 1 ? 's' : ''}`;
+  pages.appendChild(countSpan);
+
   for (let i = 0; i < els; i++) {
     const bt = document.createElement('BUTTON');
-    bt.className = 'myBt';
+    bt.className = 'myBt fade-in';
+    bt.style.animationDelay = `${i * 0.05}s`;
     bt.innerHTML = (i + 1).toString();
     pages.appendChild(bt);
   }
@@ -279,14 +430,19 @@ function createPages(hot: Handsontable) {
   setPageStyles(1);
 
   pages.addEventListener('click', function (e) {
-    const clicked = (e.target as HTMLElement).innerHTML;
-    setPageStyles(Number(clicked));
-    const newData = DATA.slice((Number(clicked) - 1) * ROWS_ON_SINGLE_PAGE, Number(clicked) * ROWS_ON_SINGLE_PAGE);
-    const newRows = range((Number(clicked) - 1) * ROWS_ON_SINGLE_PAGE + 1, Number(clicked) * ROWS_ON_SINGLE_PAGE);
-    hot.loadData(newData);
-    hot.updateSettings({
-      rowHeaders: newRows,
-    });
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('myBt')) {
+      const clicked = target.innerHTML;
+      setPageStyles(Number(clicked));
+      const startIdx = (Number(clicked) - 1) * ROWS_ON_SINGLE_PAGE;
+      const endIdx = Number(clicked) * ROWS_ON_SINGLE_PAGE;
+      const newData = DATA.slice(startIdx, endIdx);
+      const newRows = range(startIdx + 1, Math.min(endIdx, DATA.length));
+      hot.loadData(newData);
+      hot.updateSettings({
+        rowHeaders: newRows,
+      });
+    }
   });
 }
 
